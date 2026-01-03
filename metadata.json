@@ -1,0 +1,5 @@
+{
+  "name": "LSF Translate AI",
+  "description": "An MVP platform for translating French text into French Sign Language (LSF) glosses with AI-powered visualization capabilities.",
+  "requestFramePermissions": []
+}
