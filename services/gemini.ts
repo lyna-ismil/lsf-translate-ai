@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { TranslationResult, Gloss } from '../types';
-import { lookupGlossVideo } from './dictionary';
+import { lookupGlossVideo } from './videoDictionary';
 
 // Initialize the API client
 const apiKey = process.env.API_KEY || ''; // In a real app, this should be handled securely

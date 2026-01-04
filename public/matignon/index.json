@@ -1,0 +1,30 @@
+{
+  "BONJOUR": [
+    {
+      "videoUrl": "/matignon/videos/test_video.mp4#t=1,4",
+      "source": "Matignon-LSF",
+      "score": 1
+    }
+  ],
+  "TOUS": [
+    {
+      "videoUrl": "/matignon/videos/test_video.mp4#t=1,4",
+      "source": "Matignon-LSF",
+      "score": 1
+    }
+  ],
+  "BIENVENUE": [
+    {
+      "videoUrl": "/matignon/videos/test_video.mp4#t=5,8",
+      "source": "Matignon-LSF",
+      "score": 1
+    }
+  ],
+  "MATIGNON": [
+    {
+      "videoUrl": "/matignon/videos/test_video.mp4#t=5,8",
+      "source": "Matignon-LSF",
+      "score": 1
+    }
+  ]
+}
