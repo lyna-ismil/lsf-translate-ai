@@ -10,6 +10,7 @@ import { translateTextToGloss, generateSignImage } from './services/gemini';
 const App: React.FC = () => {
   const [currentResult, setCurrentResult] = useState<TranslationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedGloss, setSelectedGloss] = useState<Gloss | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -18,6 +19,7 @@ const App: React.FC = () => {
     setLoading(true);
     setCurrentResult(null);
     setSelectedGloss(null);
+    setError(null); // Reset error on new translation
     try {
       const result = await translateTextToGloss(text);
       setCurrentResult(result);
@@ -26,7 +28,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("Translation failed:", error);
-      // In a real app, we'd show a toast here
+      setError((error as Error).message || "An unknown error occurred.");
     } finally {
       setLoading(false);
     }
@@ -112,13 +114,18 @@ const App: React.FC = () => {
                   Séquence de Signes (Glosses)
                 </h2>
                 {loading ? (
-                   <div className="flex flex-col items-center justify-center h-40 space-y-4">
-                     <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                     <p className="text-slate-400 text-sm">Traduction et analyse grammaticale en cours...</p>
-                   </div>
+                  <div className="flex flex-col items-center justify-center h-40 space-y-4">
+                    <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <p className="text-slate-400 text-sm">Traduction et analyse grammaticale en cours...</p>
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center h-full text-red-500 bg-red-50 border-2 border-dashed border-red-100 rounded-xl p-4">
+                    <p className="font-semibold">Translation Error</p>
+                    <p className="text-sm text-center">{error}</p>
+                  </div>
                 ) : currentResult ? (
-                  <GlossTimeline 
-                    result={currentResult} 
+                  <GlossTimeline
+                    result={currentResult}
                     selectedGlossId={selectedGloss?.id || null}
                     onSelectGloss={handleGlossSelect}
                     onPlay={handlePlaySequence}

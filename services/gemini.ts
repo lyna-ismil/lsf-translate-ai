@@ -10,18 +10,18 @@ const TRANSLATION_MODEL = 'gemini-3-flash-preview';
 const IMAGE_MODEL = 'gemini-3-pro-image-preview'; // Better quality for sign details
 
 export const translateTextToGloss = async (text: string): Promise<TranslationResult> => {
-  let result: TranslationResult;
-
   if (!apiKey) {
-    console.warn("No API Key provided");
-    result = await mockTranslation(text);
-  } else {
-    try {
-      const response = await ai.models.generateContent({
-        model: TRANSLATION_MODEL,
-        contents: `Analyze and translate the following French text into French Sign Language (LSF) Glosses.
-        Input Text: "${text}"`,
-        config: {
+    // Throw an error if the API key is missing. This will be caught by the UI.
+    throw new Error("API key is missing. Please set the API_KEY environment variable.");
+  }
+
+  let result: TranslationResult;
+  try {
+    const response = await ai.models.generateContent({
+      model: TRANSLATION_MODEL,
+      contents: `Analyze and translate the following French text into French Sign Language (LSF) Glosses.
+      Input Text: "${text}"`,
+      config: {
           systemInstruction: `You are an elite linguistic engine specializing in French to French Sign Language (LSF) interpretation.
           
           Your task is to deconstruct the French sentence, extract the meaning, and reconstruct it using strictly LSF grammar and syntax.
@@ -60,53 +60,49 @@ export const translateTextToGloss = async (text: string): Promise<TranslationRes
           OUTPUT REQUIREMENT:
           Return a JSON object containing the analyze gloss sequence.
           `,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              translatedGlosses: { type: Type.STRING, description: "The full sentence in gloss format (e.g., DEMAIN PARIS MOI ALLER)" },
-              grammarNotes: { type: Type.STRING, description: "Detailed explanation of the LSF grammar rules applied (e.g., 'Topic-Comment structure used, Adjective post-positioned')." },
-              glosses: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    originalWord: { type: Type.STRING, description: "The concept or source word(s) this gloss represents" },
-                    gloss: { type: Type.STRING, description: "The LSF Gloss (UPPERCASE)" },
-                    type: { type: Type.STRING, enum: ["noun", "verb", "adjective", "syntax", "other"] },
-                    description: { type: Type.STRING, description: "Detailed visual description of the sign movement, including spatial start/end points." },
-                    facialExpression: { type: Type.STRING, description: "Specific facial expression (e.g., 'Eyebrows Raised', 'Puffed Cheeks')." },
-                    duration: { type: Type.NUMBER, description: "Duration in seconds" }
-                  },
-                  required: ["id", "originalWord", "gloss", "type", "description"]
-                }
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            translatedGlosses: { type: Type.STRING, description: "The full sentence in gloss format (e.g., DEMAIN PARIS MOI ALLER)" },
+            grammarNotes: { type: Type.STRING, description: "Detailed explanation of the LSF grammar rules applied (e.g., 'Topic-Comment structure used, Adjective post-positioned')." },
+            glosses: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  originalWord: { type: Type.STRING, description: "The concept or source word(s) this gloss represents" },
+                  gloss: { type: Type.STRING, description: "The LSF Gloss (UPPERCASE)" },
+                  type: { type: Type.STRING, enum: ["noun", "verb", "adjective", "syntax", "other"] },
+                  description: { type: Type.STRING, description: "Detailed visual description of the sign movement, including spatial start/end points." },
+                  facialExpression: { type: Type.STRING, description: "Specific facial expression (e.g., 'Eyebrows Raised', 'Puffed Cheeks')." },
+                  duration: { type: Type.NUMBER, description: "Duration in seconds" }
+                },
+                required: ["id", "originalWord", "gloss", "type", "description"]
               }
-            },
-            required: ["translatedGlosses", "glosses"]
-          }
+            }
+          },
+          required: ["translatedGlosses", "glosses"]
         }
-      });
+      }
+    });
 
-      const jsonStr = response.text || "{}";
-      const data = JSON.parse(jsonStr);
+    const jsonStr = response.text || "{}";
+    const data = JSON.parse(jsonStr);
 
-      result = {
-        originalText: text,
-        translatedGlosses: data.translatedGlosses,
-        glosses: data.glosses,
-        grammarNotes: data.grammarNotes
-      };
+    result = {
+      originalText: text,
+      translatedGlosses: data.translatedGlosses,
+      glosses: data.glosses,
+      grammarNotes: data.grammarNotes
+    };
 
-    } catch (error) {
-      console.error("Gemini Translation Error:", error);
-      // Fallback to mock if API fails or key is invalid
-      result = await mockTranslation(text);
-    }
+  } catch (error) {
+    console.error("Gemini Translation Error:", error);
+    // Re-throw a more user-friendly error to be caught by the UI
+    throw new Error("The translation service failed. Please check the API key and network connection.");
   }
-
-  // ENRICHMENT STEP: Lookup Videos
-  // This runs after the AI translation to find matching videos in our dictionary
   const enrichedGlosses = await Promise.all(result.glosses.map(async (gloss) => {
     const videoUrl = await lookupGlossVideo(gloss.gloss);
     return { ...gloss, videoUrl };
